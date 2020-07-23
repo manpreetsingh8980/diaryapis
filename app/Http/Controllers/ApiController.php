@@ -21,6 +21,7 @@ use App\DiaryRates;
 use App\DiaryMilkEntries;
 use App\DiaryMilkSale;
 use App\DiaryCustomerBill;
+use App\DiaryUserMembership;
 use Hash;
 use Str;
 use View;
@@ -1629,7 +1630,9 @@ class ApiController extends BaseController
 				$get_allentries = DiaryMilkEntries::where('customer_id',$customer_id)->whereBetween('created_at', [$startDate, $endDate])->get()->toArray();
 				
 				$get_customer_details = DiaryUsercustomers::where('id',$customer_id)->first();
-					//echo "<pre>";print_r($get_allentries);die;
+				
+
+				//	echo "<pre>";print_r($get_customer_details);die;
 				if(!empty($get_milk_count)){
 					$t=time();
 					$date = date("Y-m-d",$t);
@@ -1647,6 +1650,24 @@ class ApiController extends BaseController
 						
 						$pdf = PDF::loadView('bill_pdf', compact('bill','get_allentries','get_customer_details'));
 						
+						try{
+							#send_text_message_to_custoer
+							$basic  = new \Nexmo\Client\Credentials\Basic('67045646', '3tUjsUQByMHlg7yg');
+							$client = new \Nexmo\Client($basic);
+							
+							$text = "Hello ".$get_customer_details->name." your bill is generated from ".$startDate." to ".$endDate.". Your total kg of milk is ".$get_milk_count->total_milk."kg and total amount is INR ".$get_milk_count->total_amount." ..";
+							$message = $client->message()->send([
+								//'to' => $get_customer_details->phone_number,
+								'to' => '919815570855',
+								'from' => 'Milk Dairy',
+								'text' => $text
+							]);
+						}catch(\Exception $e){
+					 
+							return Response::json(['success' => '0','message'=>$e->getMessage()],200);
+						}
+					
+				
 						return $pdf->download('bill.pdf');
 						//echo Response::json(['success' => '1','message'=>'Bill Generated Successfully','bill'=>$bill],200);
 					
@@ -1677,6 +1698,24 @@ class ApiController extends BaseController
 					
 					$pdf = PDF::loadView('bill_pdf', compact('bill','get_allentries','get_customer_details'));
 					
+					try{
+						#send_text_message_to_custoer
+						$basic  = new \Nexmo\Client\Credentials\Basic('67045646', '3tUjsUQByMHlg7yg');
+						$client = new \Nexmo\Client($basic);
+						
+						$text = "Hello ".$get_customer_details->name." your bill is generated from ".$startDate." to ".$endDate.". Your total kg of milk is ".$get_milk_count->total_milk."kg and total amount is INR ".$get_milk_count->total_amount." ..";
+						$message = $client->message()->send([
+							//'to' => $get_customer_details->phone_number,
+							'to' => '919815570855',
+							'from' => 'Milk Dairy',
+							'text' => $text
+						]);
+					}catch(\Exception $e){
+				 
+						return Response::json(['success' => '0','message'=>$e->getMessage()],200);
+					}
+					
+						
 					return $pdf->download('bill.pdf');
 		
 					
@@ -1695,6 +1734,98 @@ class ApiController extends BaseController
 		}else{
 			return Response::json(['success' => '0','message'=>'User is not logged in'],200);
 		}
+	}#fn ends
+	
+	
+	#fn for membership
+	public function membership(Request $request){
+		if( $this->header_api_token==''){
+            return Response::json(['success' => '0','message'=>'Please provide api-token in headers'],200);
+        }
+		
+		#check logged in user id
+		try{
+			
+			$user_id = DiaryLoginSessions::select('user_id')->where(['api_token'=>$this->header_api_token,'token_status'=>1])->first();
+					
+		}catch(\Exception $e){
+			return Response::json(['success' => '0','message'=>$e->getMessage()],200);
+		}
+		
+		if(!empty($user_id)){
+			
+			
+			try{
+				$check_userid = DiaryUsers::where('id',$user_id->user_id)
+								->first();
+	 
+			}catch(\Exception $e){
+	 
+				return Response::json(['success' => '0','message'=>$e->getMessage()],200);
+			}
+			
+			if(!empty($check_userid)){
+				
+				#check card_number
+				$card_number = ((isset($request->card_number)) ? ($request->card_number) : '');
+				if($card_number == ""){
+					return Response::json(['success'=>'0','message'=>'Please provide Card number.'],200);
+					exit;
+				}
+				
+				$expiry_date = ((isset($request->expiry_date)) ? ($request->expiry_date) : '');
+				if($expiry_date == ""){
+					return Response::json(['success'=>'0','message'=>'Please provide Expiry date.'],200);
+					exit;
+				}
+				
+				$cvv = ((isset($request->cvv)) ? ($request->cvv) : '');
+				if($cvv == ""){
+					return Response::json(['success'=>'0','message'=>'Please provide cvv.'],200);
+					exit;
+				}
+				
+				$plan = ((isset($request->plan)) ? ($request->plan) : '');
+				if($plan == ""){
+					return Response::json(['success'=>'0','message'=>'Please provide plan.'],200);
+					exit;
+				}
+				
+				
+				
+				try{
+					
+					$t=time();
+					$date = date("Y-m-d",$t);
+												
+ 
+					$id = DiaryUserMembership::insertGetId([
+						'user_id'=>$user_id->user_id,
+						'card_number' =>$request->card_number,     
+						'expiry_date' =>$request->expiry_date, 					
+						'cvv'=>$request->cvv,
+						'plan'=>$request->plan,
+						'created_at'=>$date,
+						'updated_at'=>$date,
+					]);
+				}catch(\Exception $e){
+					return Response::json(['success' => '0','message'=>$e->getMessage()],200);
+				}
+	 
+				#json final response
+				return Response::json(['success'=>'1','message'=>'Card details saved.','user_id'=>(string)$id],200);
+				exit;
+				
+							
+							
+			}else{#check user
+	 
+				return Response::json(['success' => '0','message'=>'User does not exists.'],200);
+			}
+		}else{
+			return Response::json(['success' => '0','message'=>'User is not logged in'],200);
+		}
+		
 	}#fn ends
 	
 }

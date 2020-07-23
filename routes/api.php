@@ -55,3 +55,4 @@ Route::post('/milksale','ApiController@milkSaleEntries');
 Route::post('/milksalelist','ApiController@milkSaleList');
 Route::get('/milk_list/{customer_id}','ApiController@customerMilkList');
 Route::post('/generate_bill','ApiController@billGenerate');
+Route::post('/membership','ApiController@membership');
