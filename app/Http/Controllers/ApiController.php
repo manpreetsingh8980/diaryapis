@@ -1493,9 +1493,33 @@ class ApiController extends BaseController
 				}
 				
 				$newDate = date("Y-m-d", strtotime($date));  
-				$get_sale = DiaryMilkSale::where(['time'=>$time,'created_at'=>$newDate])->get()->toArray();
-				
+				$get_sale = DiaryMilkSale::with('customer_info')->where(['time'=>$time,'created_at'=>$newDate])->first();
+				//echo "<pre>";print_r($get_sale);die;
 				if(!empty($get_sale)){
+					
+					$snf = $get_sale->snf;
+					if($snf == "" || $snf == null){
+						$snf = "8";
+					}
+					
+					$fat = $get_sale->fat;
+					$fat_id = DiaryFat::select('id')->where('fat',$fat)->first();
+					if(!empty($fat_id)){
+						$fatId = $fat_id->id;
+					}else{
+						return Response::json(['success'=>'0','message'=>'wrong entry'],200);
+					exit;
+					}
+					
+					
+					$snf_id = DiarySnf::select('id')->where('snf',$snf)->first();
+					$snfId = $snf_id->id;
+						
+					$getrate = DiaryRates::select('rate')->where(['snf_id'=>$snfId,'fat_id'=>$fatId,'user_id'=>$user_id->user_id])->first();
+					if(!empty($getrate)){
+						return Response::json(['success'=>'1','message'=>'Get List Successfully.','milk_sale_list'=>$get_sale,'rate'=>$getrate->rate],200);
+						exit;
+					}	
 					return Response::json(['success'=>'1','message'=>'Get List Successfully.','milk_sale_list'=>$get_sale],200);
 					exit;
 				}else{
