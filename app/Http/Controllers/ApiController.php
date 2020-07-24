@@ -1299,7 +1299,7 @@ class ApiController extends BaseController
 								exit;
 							}
 						}else{
-							return Response::json(['success' => '0','message'=>'Rate is not added'],200);
+							return Response::json(['success' => '0','message'=>'Rate not Found'],200);
 						}
 						
 					}catch(\Exception $e){
@@ -1668,10 +1668,10 @@ class ApiController extends BaseController
 						}
 					
 				
-						return $pdf->download('bill.pdf');
+						//return $pdf->download('bill.pdf');
 						//echo Response::json(['success' => '1','message'=>'Bill Generated Successfully','bill'=>$bill],200);
 					
-						//return Response::json(['success' => '1','message'=>'Bill Generated Successfully','bill'=>$bill],200);
+						return Response::json(['success' => '1','message'=>'Bill Generated Successfully','bill'=>$bill],200);
 					
 					}else{
 						
@@ -1716,10 +1716,10 @@ class ApiController extends BaseController
 					}
 					
 						
-					return $pdf->download('bill.pdf');
+					//return $pdf->download('bill.pdf');
 		
 					
-					//return Response::json(['success' => '1','message'=>'Bill Generated Successfully','bill'=>$bill],200);
+					return Response::json(['success' => '1','message'=>'Bill Generated Successfully','bill'=>$bill],200);
 					
 				}else{
 					return Response::json(['success' => '0','message'=>'Milk Entry not found for this customer.'],200);
